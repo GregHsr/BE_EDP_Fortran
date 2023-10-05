@@ -1,5 +1,5 @@
 !*****************************************************
-subroutine init_A(param,dt,vol,A_base,coef_a1,coef_a2,coef_a3,coef_a4,coef_b,coef_c,coef_d,coef_e,x,y,xv,yv)
+subroutine creation_A(param,dt,vol,A_base,x,y,xv,yv)
     !*****************************************************
     !***************Description*****************
     ! Create the A matrice without boundary condition
@@ -26,7 +26,7 @@ subroutine init_A(param,dt,vol,A_base,coef_a1,coef_a2,coef_a3,coef_a4,coef_b,coe
     real, dimension(param%nx,param%ny), intent(in) :: xv,yv,vol
     real, dimension(param%nx+1,param%ny+1), intent(in) :: x,y
 
-    real,intent(out) :: coef_a1,coef_a2,coef_a3,coef_a4,coef_b,coef_c,coef_d,coef_e
+    real :: coef_a1,coef_a2,coef_a3,coef_a4,coef_b,coef_c,coef_d,coef_e
     
     real :: delta_xi  !distance between two center (x)
     real :: Gdelta_xi !distance of x side of the cell 
@@ -72,41 +72,68 @@ subroutine init_A(param,dt,vol,A_base,coef_a1,coef_a2,coef_a3,coef_a4,coef_b,coe
             end if
     
             ! Calcul of delta_yjminus1
-            if (i==1) then
+            if (j==1) then
                 delta_yjminus1 = Gdelta_yj/2
             else 
                 delta_yjminus1 = yv(i,j)-yv(i,j-1)
             end if
             
-            ! Calcul des coefficients a1,a2,a3,a4
+            ! Calcul des coefficients
             coef_a1 = (param%D*dt*Gdelta_yj)/(vol(i,j)*delta_xi)
             coef_a2 = (param%D*dt*Gdelta_yj)/(vol(i,j)*delta_ximinus1)
             coef_a3 = (param%D*dt*Gdelta_xi)/(vol(i,j)*delta_yj)
             coef_a4 = (param%D*dt*Gdelta_xi)/(vol(i,j)*delta_yjminus1)
-    
+
+            coef_b = -(param%D*dt*Gdelta_xi)/(vol(i,j)*delta_yj)
+            coef_c = -(param%D*dt*Gdelta_xi)/(vol(i,j)*delta_yjminus1)
+            coef_d = -(param%D*dt*Gdelta_yj)/(vol(i,j)*delta_xi)
+            coef_e = -(param%D*dt*Gdelta_yj)/(vol(i,j)*delta_ximinus1)
+
+            if (j==1) then 
+                coef_c = 0.
+                if (i==1) coef_e = 0.
+            end if
+
+            if (j==param%Ny) then
+                coef_a3 = 0.
+                if (i==param%Nx) then
+                    coef_a1 = 0.
+                    coef_a2 = 0.
+                    coef_b = 0.
+                    coef_d = 0.
+                    coef_e = 0.
+                end if
+            end if
+
+            if (i==1) then
+                coef_e = 0.
+                if (j==param%Ny) then
+                    coef_a3 = 0.
+                    coef_b = 0.
+                end if
+            end if
+
+            if (i==param%Nx) then
+                coef_a2 = 0. 
+                coef_a1 = 0.
+                if (j==1) then
+                    coef_c = 0.
+                    coef_d = 0.
+                    coef_e = 0.
+                end if
+            end if
+
+            ! Make A_base
             A_base(k,k)=1+coef_a1+coef_a2+coef_a3+coef_a4
-    
-            if (k>1) then
-                coef_e = -(param%D*dt*Gdelta_yj)/(vol(i,j)*delta_ximinus1)
-                A_base(k,k-1) = coef_e
-            end if
-            if (k<param%ny-1) then 
-                coef_d = -(param%D*dt*Gdelta_yj)/(vol(i,j)*delta_xi)
-                A_base(k,k+1)= coef_d
-            end if
-            if (k>param%nx) then
-                coef_c = -(param%D*dt*Gdelta_xi)/(vol(i,j)*delta_yjminus1)
-                coef_c = -(param%D*dt*Gdelta_xi)/(vol(i,j)*delta_yjminus1)
-                A_base(k,k-param%nx)= coef_c
-            end if
-            if (k<param%nx) then
-                coef_b = -(param%D*dt*Gdelta_xi)/(vol(i,j)*delta_yj)
-                A_base(k,k+param%nx)= coef_b
-            end if
+            if (k>1) A_base(k,k-1) = coef_e
+            if (k<param%ny-1) A_base(k,k+1)= coef_d
+            if (k>param%nx) A_base(k,k-param%nx)= coef_c
+            if (k<param%nx) A_base(k,k+param%nx)= coef_b
+            
         end do
     end do
     
-    end subroutine init_A
+    end subroutine creation_A
     !**************************
     
     !*******************************
