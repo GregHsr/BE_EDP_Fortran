@@ -1,6 +1,6 @@
 !*****************************************************
 subroutine creation_A(param,dt,vol,A_base,x,y,xv,yv)
-    !*****************************************************
+!*****************************************************
     !***************Description*****************
     ! Create the A matrice without boundary condition
     !*******************************************
@@ -133,101 +133,25 @@ subroutine creation_A(param,dt,vol,A_base,x,y,xv,yv)
         end do
     end do
     
-    end subroutine creation_A
-    !**************************
+end subroutine creation_A
+!**************************
     
-    !*******************************
-    SUBROUTINE GAUSSIJ(LV,A,B)
-    !*******************************
-    !*
-    !C             RESOLUTION D'UN SYSTEME LINEAIRE
-    !*
-    !C  METHODE : Methode de Gauss.
-    !*
-    !C  LANGAGE : FORTRAN
-    !*
-    !C  MODE D'UTILISATION : CALL GAUSSIJ (LV,A,B)
-    !*
-    !C  Donnees : A  Coefficients de la matrice, variable a deux dimensions
-    !*               dont les valeurs numeriques doivent etre fournies
-    !*               conformement au schema ci-dessous.
-    !*            B  Termes du 2eme membre, variable a un indice.
-    !*               A la sortie de GAUSS, la solution se trouve dans B.
-    !*            LV Ordre de la matrice A.
-    !*
-    !*        |                                                       |
-    !*        | A(1,1)       *                  *                    *|
-    !*        |  *                                                    |
-    !*        |                                                       |
-    !*        |                                                       |
-    !*        |                                                       |
-    !*        |                                                       |
-    !*        |                                                       |
-    !*        |                                                       |
-    !*        |                                                       |
-    !*        |                                                       |
-    !*        |                                                       |
-    !*        |  *                                    *       A(LV,LV)|
-    !*
-    
-    INTEGER, INTENT(IN) :: LV
-    REAL, DIMENSION(LV,LV), INTENT(inout) :: A
-    REAL, DIMENSION(LV), INTENT(inout) :: B
-    
-    REAL, DIMENSION(LV,LV) :: ATEMP
-    
-    INTEGER :: I, J, K
-    REAL :: DIVB, BI, AKI
-    
-    DO I=1,LV
-        DO J=1,LV
-        ATEMP(I,J)=A(I,J)
-        ENDDO
-    ENDDO
-    
-    DO I=1,LV
-        DIVB=1./ATEMP(I,I)
-        B(I)=B(I)*DIVB
-        BI=B(I)
-        DO J=LV,I,-1
-            ATEMP(I,J)=ATEMP(I,J)*DIVB
-        ENDDO
-        DO K=1,I-1
-            AKI=ATEMP(K,I)
-            B(K)=B(K)-AKI*BI
-            DO J=LV,I,-1
-        ATEMP(K,J)=ATEMP(K,J)-AKI*ATEMP(I,J)
-            ENDDO
-        ENDDO
-        DO K=I+1,LV
-            AKI=ATEMP(K,I)
-            B(K)=B(K)-AKI*BI
-            DO J=LV,I,-1
-        ATEMP(K,J)=ATEMP(K,J)-AKI*ATEMP(I,J)
-            ENDDO
-        ENDDO
-    ENDDO
-    
-    RETURN
-    
-    END SUBROUTINE GAUSSIJ
-    
-    !**************************
 
 !********************
-subroutine creation_B(param,B,Tn,Fadv,dt,xv,yv,vol,x,y)
+subroutine creation_B(param,B_base,Fadv,dt,xv,yv,vol,x,y)
 !********************
     use m_type
     implicit none
 
     type (donnees), intent(in) :: param
     real, dimension(param%nx,param%ny), intent(in) :: Fadv
-    real, dimension(param%nx*param%ny), intent(in) :: Tn
     real, dimension(param%nx,param%ny), intent(in) :: xv,yv,vol
     real, dimension(param%nx+1,param%ny+1), intent(in) :: x,y
     real, intent(in) :: dt
 
-    real, dimension(param%Nx*param%Ny), intent(out) :: B
+    real, dimension(param%Nx*param%Ny), intent(out) :: B_base
+
+    real, dimension(param%nx*param%ny) :: Tn
 
     integer :: i,j,k
 
@@ -239,14 +163,55 @@ subroutine creation_B(param,B,Tn,Fadv,dt,xv,yv,vol,x,y)
     real :: delta_yjminus1
     real :: coef_b,coef_c,coef_d,coef_e
 
+    do i = 1,param%Nx*param%Ny
+        Tn(i) = param%Ti
+    end do
+
     do i = 1,param%Nx
         do j =1,param%Ny 
             k = (j-1)*param%Nx+i
-            B(k)=Tn(k)+Fadv(i,j) 
+            
+            Gdelta_xi = x(i+1,j)-x(i,j)
+            Gdelta_yj = y(i,j+1)-y(i,j)
+    
+            ! Calcul de delta_xi
+            if (i==param%nx) then 
+                delta_xi = Gdelta_xi/2
+            else
+                delta_xi = xv(i+1,j)-xv(i,j)
+            end if
+    
+            !Calcul de delta_yj
+            if (j==param%ny) then
+                delta_yj = Gdelta_yj/2
+            else
+                delta_yj = yv(i,j+1)-yv(i,j)
+            end if
+    
+            ! Calcul of delta_ximinus1
+            if (i==1) then
+                delta_ximinus1 = Gdelta_xi/2
+            else 
+                delta_ximinus1 = xv(i,j)-xv(i-1,j)
+            end if
+    
+            ! Calcul of delta_yjminus1
+            if (j==1) then
+                delta_yjminus1 = Gdelta_yj/2
+            else 
+                delta_yjminus1 = yv(i,j)-yv(i,j-1)
+            end if
 
+            B_base(k)=Tn(k)-dt*Fadv(i,j)/vol(i,j)             
+            
             if (k==i) then
-            coef_c = -(param%D*dt*Gdelta_xi)/(vol(i,j)*delta_yjminus1)
-                B(k)=B(k)-coef_c
+                coef_c = -(param%D*dt*Gdelta_xi)/(vol(i,j)*delta_yjminus1)
+                B_base(k)=B_base(k)-coef_c*param%Tb
+            end if
+            
+            if (k==(j-1)*param%Nx+1) then
+                coef_e = -(param%D*dt*Gdelta_yj)/(vol(i,j)*delta_ximinus1)
+                B_base(k)=B_base(k)-coef_e*param%Tg
             end if
 
         end do
@@ -255,28 +220,105 @@ subroutine creation_B(param,B,Tn,Fadv,dt,xv,yv,vol,x,y)
 
 end subroutine creation_B
 
-!*********************************
-subroutine miseajour_T(param,invA, B, T_fut)
-!*********************************
-    ! Calcul de A^(⁻1)*B=T
 
+
+!*********************************
+subroutine miseajour_T(param, B_gauss, T_fut)
+!*********************************
     use m_type
     implicit none 
     
     type (donnees), intent(in) :: param
-    real, dimension(param%Nx*param%Ny,param%Nx*param%Ny), intent(in) :: invA
-
-    real, dimension(param%Nx*param%Ny), intent(out) :: T_fut, B
+    real, dimension(param%Nx,param%Ny), intent(out) :: T_fut
+    real, dimension(param%Nx*param%Ny), intent(in) :: B_gauss
 
     integer :: i,j 
-    real :: somme_inter
-
-    do i=1,param%Nx*param%Ny
-        somme_inter = 0.
-        do j=1,param%Nx*param%Ny
-            somme_inter = somme_inter + B(j)*invA(i,j)
+    integer :: k
+    
+    do j=1,param%Ny
+        do i=1,param%Nx
+            k = (j-1)*param%Nx+i
+            T_fut(i,j) = B_gauss(k)
         end do
-        T_fut(i) = somme_inter
     end do
 
 end subroutine miseajour_T
+
+
+!*******************************
+SUBROUTINE GAUSSIJ(LV,A,B)
+!*******************************
+!*
+!C             RESOLUTION D'UN SYSTEME LINEAIRE
+!*
+!C  METHODE : Methode de Gauss.
+!*
+!C  LANGAGE : FORTRAN
+!*
+!C  MODE D'UTILISATION : CALL GAUSSIJ (LV,A,B)
+!*
+!C  Donnees : A  Coefficients de la matrice, variable a deux dimensions
+!*               dont les valeurs numeriques doivent etre fournies
+!*               conformement au schema ci-dessous.
+!*            B  Termes du 2eme membre, variable a un indice.
+!*               A la sortie de GAUSS, la solution se trouve dans B.
+!*            LV Ordre de la matrice A.
+!*
+!*        |                                                       |
+!*        | A(1,1)       *                  *                    *|
+!*        |  *                                                    |
+!*        |                                                       |
+!*        |                                                       |
+!*        |                                                       |
+!*        |                                                       |
+!*        |                                                       |
+!*        |                                                       |
+!*        |                                                       |
+!*        |                                                       |
+!*        |                                                       |
+!*        |  *                                    *       A(LV,LV)|
+!*
+
+INTEGER, INTENT(IN) :: LV
+REAL, DIMENSION(LV,LV), INTENT(inout) :: A
+REAL, DIMENSION(LV), INTENT(inout) :: B
+
+REAL, DIMENSION(LV,LV) :: ATEMP
+
+INTEGER :: I, J, K
+REAL :: DIVB, BI, AKI
+
+DO I=1,LV
+    DO J=1,LV
+    ATEMP(I,J)=A(I,J)
+    ENDDO
+ENDDO
+
+DO I=1,LV
+    DIVB=1./ATEMP(I,I)
+    B(I)=B(I)*DIVB
+    BI=B(I)
+    DO J=LV,I,-1
+        ATEMP(I,J)=ATEMP(I,J)*DIVB
+    ENDDO
+    DO K=1,I-1
+        AKI=ATEMP(K,I)
+        B(K)=B(K)-AKI*BI
+        DO J=LV,I,-1
+    ATEMP(K,J)=ATEMP(K,J)-AKI*ATEMP(I,J)
+        ENDDO
+    ENDDO
+    DO K=I+1,LV
+        AKI=ATEMP(K,I)
+        B(K)=B(K)-AKI*BI
+        DO J=LV,I,-1
+    ATEMP(K,J)=ATEMP(K,J)-AKI*ATEMP(I,J)
+        ENDDO
+    ENDDO
+ENDDO
+
+RETURN
+
+END SUBROUTINE GAUSSIJ
+
+!**************************

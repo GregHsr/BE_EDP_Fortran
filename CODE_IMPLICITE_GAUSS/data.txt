@@ -1,5 +1,5 @@
- 4             ! nx:       number of cells in x-direction
- 4             ! ny:       number of cells in y-direction
+ 10             ! nx:       number of cells in x-direction
+ 10            ! ny:       number of cells in y-direction
  3.e-3          ! Lx:       length of the domain (m)
  250.e-6          ! Ly:       height of the domain (m)
  5.e-2              ! U0:       characteristic parameter for the velocity (s^-1)
@@ -10,6 +10,6 @@
  1.e-3          ! tf:       final time (s)
  1              ! Nout:     number of intermediate unsaved time steps 
  1.             ! CFL:      Courant's number (advection)
- 5.            ! R:        Fourier's number (diffusion)
+ 0.5            ! R:        Fourier's number (diffusion)
  0              ! Type_mesh 0: regular mesh, 1: irregular mesh
  0              ! Type_vel  0: uniform velocity, 1: non uniform velocity
