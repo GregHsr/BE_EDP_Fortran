@@ -28,28 +28,31 @@ subroutine creation_A(param,dt,vol,A_base,x,y,xv,yv)
 
     real :: coef_a1,coef_a2,coef_a3,coef_a4,coef_b,coef_c,coef_d,coef_e
     
-    real :: delta_xi  !distance between two center (x)
+    real :: delta_xi  !distance between two center (x<->x+1)
     real :: Gdelta_xi !distance of x side of the cell 
-    real :: delta_yj !distance between two center (y) 
+    real :: delta_yj !distance between two center (y<->y+1) 
     real :: Gdelta_yj !distance of y side of the cell
-    real :: delta_ximinus1
-    real :: delta_yjminus1
+    real :: delta_ximinus1 !distance between two center (x<->x-1)
+    real :: delta_yjminus1 !distance between two center (y<->y-1)
     
     real, dimension(param%nx*param%ny,param%nx*param%ny), intent(out) :: A_base
     
     integer :: i,j
     integer :: k 
+
+    ! Initialisation de A_base
+    A_base(:,:) = 0.    
     
-    A_base(:,:) = 0.
-    
+    ! Calcul des coefficients et remplissage de A_base
     do i=1,param%nx
         do j=1,param%ny
     
             k = (j-1)*param%nx + i
-    
+
+            !Calcul des coef Gdelta
             Gdelta_xi = x(i+1,j)-x(i,j)
             Gdelta_yj = y(i,j+1)-y(i,j)
-    
+
             ! Calcul de delta_xi
             if (i==param%nx) then 
                 delta_xi = Gdelta_xi/2
@@ -77,7 +80,7 @@ subroutine creation_A(param,dt,vol,A_base,x,y,xv,yv)
             else 
                 delta_yjminus1 = yv(i,j)-yv(i,j-1)
             end if
-            
+           
             ! Calcul des coefficients
             coef_a1 = (param%D*dt*Gdelta_yj)/(vol(i,j)*delta_xi)
             coef_a2 = (param%D*dt*Gdelta_yj)/(vol(i,j)*delta_ximinus1)
@@ -89,6 +92,7 @@ subroutine creation_A(param,dt,vol,A_base,x,y,xv,yv)
             coef_d = -(param%D*dt*Gdelta_yj)/(vol(i,j)*delta_xi)
             coef_e = -(param%D*dt*Gdelta_yj)/(vol(i,j)*delta_ximinus1)
 
+            ! Condition aux limites
             if (j==1) then 
                 coef_c = 0.
                 if (i==1) coef_e = 0.
@@ -96,10 +100,10 @@ subroutine creation_A(param,dt,vol,A_base,x,y,xv,yv)
 
             if (j==param%Ny) then
                 coef_a3 = 0.
+                coef_b = 0.
                 if (i==param%Nx) then
                     coef_a1 = 0.
                     coef_a2 = 0.
-                    coef_b = 0.
                     coef_d = 0.
                     coef_e = 0.
                 end if
@@ -116,19 +120,19 @@ subroutine creation_A(param,dt,vol,A_base,x,y,xv,yv)
             if (i==param%Nx) then
                 coef_a2 = 0. 
                 coef_a1 = 0.
+                coef_d = 0.
+                coef_e = 0.
                 if (j==1) then
                     coef_c = 0.
-                    coef_d = 0.
-                    coef_e = 0.
                 end if
             end if
 
             ! Make A_base
             A_base(k,k)=1+coef_a1+coef_a2+coef_a3+coef_a4
-            if (k>1) A_base(k,k-1) = coef_e
-            if (k<param%ny-1) A_base(k,k+1)= coef_d
-            if (k>param%nx) A_base(k,k-param%nx)= coef_c
-            if (k<param%nx) A_base(k,k+param%nx)= coef_b
+            if ((k-1)>=1) A_base(k,k-1)=coef_e
+            if ((k+1)<=param%Nx*param%Ny) A_base(k,k+1)=coef_d            
+            if ((k-param%nx)>=1) A_base(k,k-param%nx)=coef_c
+            if ((k+param%nx)<=param%Nx*param%Ny) A_base(k,k+param%nx)=coef_b
             
         end do
     end do
@@ -137,21 +141,22 @@ end subroutine creation_A
 !**************************
     
 
-!********************
-subroutine creation_B(param,B_base,Fadv,dt,xv,yv,vol,x,y)
-!********************
+!***********************************************************
+subroutine creation_B(param,B_base,Fadv,T0,dt,xv,yv,vol,x,y)
+!***********************************************************
+!Création du vecteur B_base
+!B_base est un vecteur de taille Nx*Ny
+!***********************************************************
     use m_type
     implicit none
 
     type (donnees), intent(in) :: param
-    real, dimension(param%nx,param%ny), intent(in) :: Fadv
+    real, dimension(param%nx,param%ny), intent(in) :: Fadv,T0
     real, dimension(param%nx,param%ny), intent(in) :: xv,yv,vol
     real, dimension(param%nx+1,param%ny+1), intent(in) :: x,y
     real, intent(in) :: dt
 
     real, dimension(param%Nx*param%Ny), intent(out) :: B_base
-
-    real, dimension(param%nx*param%ny) :: Tn
 
     integer :: i,j,k
 
@@ -159,18 +164,19 @@ subroutine creation_B(param,B_base,Fadv,dt,xv,yv,vol,x,y)
     real :: Gdelta_xi !distance of x side of the cell 
     real :: delta_yj !distance between two center (y) 
     real :: Gdelta_yj !distance of y side of the cell
-    real :: delta_ximinus1
-    real :: delta_yjminus1
-    real :: coef_b,coef_c,coef_d,coef_e
-
-    do i = 1,param%Nx*param%Ny
-        Tn(i) = param%Ti
-    end do
+    real :: delta_ximinus1 !distance between two center (x<->x-1)
+    real :: delta_yjminus1 !distance between two center (y<->y-1)
+    real :: coef_b,coef_c,coef_d,coef_e 
 
     do i = 1,param%Nx
-        do j =1,param%Ny 
+        do j =1,param%Ny
+
             k = (j-1)*param%Nx+i
+
+            !Pré-remplissage de la matrice B_base
+            B_base(k)=T0(i,j)-dt*Fadv(i,j)/vol(i,j) 
             
+            !Calcul des coef Gdelta
             Gdelta_xi = x(i+1,j)-x(i,j)
             Gdelta_yj = y(i,j+1)-y(i,j)
     
@@ -202,29 +208,32 @@ subroutine creation_B(param,B_base,Fadv,dt,xv,yv,vol,x,y)
                 delta_yjminus1 = yv(i,j)-yv(i,j-1)
             end if
 
-            B_base(k)=Tn(k)-dt*Fadv(i,j)/vol(i,j)             
-            
-            if (k==i) then
+            !Condition aux limites
+            if (j==1) then
                 coef_c = -(param%D*dt*Gdelta_xi)/(vol(i,j)*delta_yjminus1)
                 B_base(k)=B_base(k)-coef_c*param%Tb
             end if
             
-            if (k==(j-1)*param%Nx+1) then
+            if (i==1) then
                 coef_e = -(param%D*dt*Gdelta_yj)/(vol(i,j)*delta_ximinus1)
                 B_base(k)=B_base(k)-coef_e*param%Tg
+                if (j==1) then
+                    coef_c = -(param%D*dt*Gdelta_xi)/(vol(i,j)*delta_yjminus1)
+                    B_base(k)=B_base(k)-coef_e*param%Tg-coef_c*param%Tb
+                end if
             end if
 
         end do
     end do
-
-
 end subroutine creation_B
+!*********************************
 
 
 
 !*********************************
 subroutine miseajour_T(param, B_gauss, T_fut)
 !*********************************
+! Transformation du vecteur B_gauss sur k avec (Nx*Ny) paramètres en un matrice sur (i,j)
     use m_type
     implicit none 
     
@@ -243,6 +252,7 @@ subroutine miseajour_T(param, B_gauss, T_fut)
     end do
 
 end subroutine miseajour_T
+!*********************************
 
 
 !*******************************
