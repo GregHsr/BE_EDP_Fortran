@@ -66,6 +66,7 @@ program main
 
    !Calcul du flux advectif et de B
    call calc_flux_adv(param,x,y,xv,yv,U,V,T0,Fadv)
+   write(*,*) Fadv
    call creation_B(param,B_base,Fadv,T0,dt,xv,yv,vol,x,y)
 
    !Résolution du système linéaire A*Tn=B

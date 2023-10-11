@@ -174,7 +174,7 @@ subroutine creation_B(param,B_base,Fadv,T0,dt,xv,yv,vol,x,y)
             k = (j-1)*param%Nx+i
 
             !Pré-remplissage de la matrice B_base
-            B_base(k)=T0(i,j)-dt*Fadv(i,j)/vol(i,j) 
+            B_base(k)=T0(i,j)+dt*Fadv(i,j)/vol(i,j) 
             
             !Calcul des coef Gdelta
             Gdelta_xi = x(i+1,j)-x(i,j)
@@ -217,10 +217,10 @@ subroutine creation_B(param,B_base,Fadv,T0,dt,xv,yv,vol,x,y)
             if (i==1) then
                 coef_e = -(param%D*dt*Gdelta_yj)/(vol(i,j)*delta_ximinus1)
                 B_base(k)=B_base(k)-coef_e*param%Tg
-                if (j==1) then
-                    coef_c = -(param%D*dt*Gdelta_xi)/(vol(i,j)*delta_yjminus1)
-                    B_base(k)=B_base(k)-coef_e*param%Tg-coef_c*param%Tb
-                end if
+!                if (j==1) then
+!                    coef_c = -(param%D*dt*Gdelta_xi)/(vol(i,j)*delta_yjminus1)
+!                   B_base(k)=B_base(k)-coef_e*param%Tg
+!                end if
             end if
 
         end do
