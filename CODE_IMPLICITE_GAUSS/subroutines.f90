@@ -27,6 +27,7 @@ read (11,*) param%CFL           ! Courant's number (advection)
 read (11,*) param%R             ! Fourier's number (diffusion)
 read (11,*) param%Type_mesh     ! Type of mesh (0: regular, 1: irregular)
 read (11,*) param%Type_vel      ! Type of velocity (0: uniform, 1: non uniform)
+read (11,*) param%method        ! Method of resolution (0: Gauss, 1: SOR)
 
 close (11)
 

@@ -13,16 +13,19 @@ program main
  real,dimension(:,:),allocatable :: V             ! Vertical component of velocity defined at the center of the 'south' surface at location (xv,y)
  real,dimension(:,:),allocatable :: Fadv          ! Sum of the advective fluxes
  real,dimension(:,:),allocatable :: A_base        ! Matrice A for the implicit solver
- real,dimension(:),allocatable :: B_base          ! Vecteur B for the implicit solver         
+ real,dimension(:),allocatable :: B_base, old_B_base  ! Vecteur B for the implicit solver         
+ real,dimension(:,:),allocatable :: Mat_bande     ! Matrice for over-relaxation method
  real :: dt                                       ! Time step (in second)
  integer :: l                                     ! Increment for the temporal loop
  integer :: N                                     ! Total number of time steps                                                    
  integer :: i,j                                   ! Increment for the spatial loop  
  real :: progress                                 ! Progression of the simulation
+ integer :: ordre_A
 
  print*,'simulation started'
 
  call read_data(param)
+ write(*,*) 'R=',param%R
 
  allocate(x(param%nx+1,param%ny+1),y(param%nx+1,param%ny+1))
  allocate(xv(param%nx,param%ny),yv(param%nx,param%ny),vol(param%nx,param%ny))
@@ -31,6 +34,8 @@ program main
  allocate(Fadv(param%nx,param%ny))
  allocate(A_base(param%nx*param%ny,param%nx*param%ny))
  allocate(B_base(param%nx*param%ny))
+ allocate(old_B_base(param%nx*param%ny))
+ allocate(Mat_bande(param%nx*param%ny,2*param%nx+1))
 
  !Création du maillage
  call mesh(param,x,y,xv,yv,vol)
@@ -54,23 +59,26 @@ program main
  !Calcul du nombre de pas de temps
  N=int(param%tf/dt)
  print*,"N=",N
+ ordre_A = (param%nx*param%ny)
 
  !Début de la simulation
  print*,"Simulation with the implicit solver..."
  print*,'time advancing...'
 
  do l=1,N
-   ! Calculer et affiche le pourcentage de progression
-   progress = real(l) / real(N) * 100.0
-   write(*, '(A, F6.2, A)') "Progression : ", progress, "%"
 
    !Calcul du flux advectif et de B
    call calc_flux_adv(param,x,y,xv,yv,U,V,T0,Fadv)
-   write(*,*) Fadv
    call creation_B(param,B_base,Fadv,T0,dt,xv,yv,vol,x,y)
 
    !Résolution du système linéaire A*Tn=B
-   call GAUSSIJ(param%Nx*param%Ny,A_base,B_base)
+   if (param%method == 0) then 
+    call GAUSSIJ(param%Nx*param%Ny,A_base,B_base)
+   else
+    old_B_base = B_base 
+    call create_A_band(param%nx,param%nx*param%ny,A_base,Mat_bande)
+    call SOR(param%nx,ordre_A,Mat_bande,old_B_base,0.1,0.5,B_base)
+   end if 
 
    !Mise à jour du champ de température
    call miseajour_T(param,B_base,T0)
@@ -91,6 +99,8 @@ program main
  deallocate(Fadv)
  deallocate(A_base)
  deallocate(B_base)
+ deallocate(Mat_bande)
+ deallocate(old_B_base)
 
  print*,'simulation done'
 

@@ -332,3 +332,182 @@ RETURN
 END SUBROUTINE GAUSSIJ
 
 !**************************
+
+!***********************************
+subroutine create_A_band(MX,NA,A,AB)
+!***********************************
+!*
+!C            PASSAGE D'UNE MATRICE PLEINE A UNE MATRICE BANDE
+!*
+!C  LANGAGE : FORTRAN
+!*
+!C  Donnees : Cette routine cree une matrice bande AB de dimension (NA,LB)
+!*            a partir d'une matrice pleine A de dimension (NA,NA) telle que:
+!*            NA  Ordre de la matrice A
+!*            LB Largeur de la bande = 2 MX + 1;
+!*            MX est appelee "demi largeur de bande"
+!*
+!*             La matrice A est de la forme:
+!*           
+!*             | A(1,1)       *                  *                    *|
+!*             |  *                                                    |
+!*             |                                                       |
+!*             |                                                       |
+!*             |                                                       |
+!*             |                                                       |
+!*             |                                                       |
+!*             |                                                       |
+!*             |                                                       |
+!*             |                                                       |
+!*             |                                                       |
+!*             |  *                                    *       A(NA,NA)|
+!*
+!*
+!*             Les coefficients de la matrice AB correspondent a:
+!* 
+!* AB(1,1) ... | AB(1,MX+1)   ...    AB(1,LB)                            |
+!*             |                                                         |
+!*             | AB(2,MX)      .....    AB(2,LB)                         |
+!*             |                                                         |
+!*             |           *       .....       *                         |
+!*             |                                                         |
+!*             |               *       .....       *                     |
+!*             |                                                         |
+!*             |                   AB(I,1) ... AB(I,MX+1) ... AB(I,LB)   |
+!*             |                                                         |
+!*             |                         *       .....       *           |
+!*             |                                                         |
+!*             |                             *       .....       *       |
+!*             |                                                         |
+!*             |                               AB(NA,1)  ...  AB(NA,MX+1)| ...  AB(NA,LB)
+
+ implicit none
+
+ integer, intent(in) :: MX, NA 
+ real, dimension(NA,NA), intent(in) :: A
+ real, dimension(NA,2*MX+1), intent(out) :: AB
+
+ integer :: i,j
+
+  do i=1,NA
+   do j=1,2*MX+1
+     AB(i,j) = 0.
+   end do
+ end do
+
+  do i=1,MX+1
+   do j=1,NA-(i-1)
+     AB(j,(MX+1)+(i-1)) = A(j,j+(i-1))
+     AB(NA+1-j,(MX+1)-(i-1)) = A(NA+1-j,NA+1-j-(i-1))
+   end do
+ end do
+
+ return
+
+end subroutine create_A_band
+!***************************
+
+!************************************
+SUBROUTINE SOR(MX,N,A,B,R0,W,X)
+!************************************
+!*
+!C             RESOLUTION D'UN SYSTEME LINEAIRE
+!*
+!C  METHODE : Methode de Sur-Relaxation Successive SOR.
+!*
+!C  LANGAGE : FORTRAN
+!*
+!C  Donnees : A  Coefficients de la matrice bande, variable a deux dimensions 
+!*               dont les valeurs numeriques doivent etre fournies conformement 
+!*               au schema ci-dessous.
+!*               (Les points exterieurs a la bande ne sont pas pris en compte
+!*               lors du calcul).
+!*            B  Termes du 2eme membre, variable a un indice.
+!*               A la sortie de SOR, la solution se trouve dans X.
+!*            N  Dimension de la matrice A.
+!*            LB Largeur de la bande = 2 MX + 1;
+!*            MX est appelee "demi largeur de bande"
+!*            W facteur de relaxation
+!*
+!*            |                                                       |
+!* A(1,1) ... | A(1,MX+1)   ...    A(1,LB)                            |
+!*            |                                                       |
+!*            | A(2,MX)      .....    A(2,LB)                         |
+!*            |                                                       |
+!*            |           *       .....       *                       |
+!*            |                                                       |
+!*            |               *       .....       *                   |
+!*            |                                                       |
+!*            |                   A(I,1) ... A(I,MX+1) ... A(I,LB)    |
+!*            |                                                       |
+!*            |                         *       .....       *         |
+!*            |                                                       |
+!*            |                             *       .....       *     |
+!*            |                                                       |
+!*            |                                 A(N,1)  ...  A(N,MX+1)| ...  A(N,LB)
+
+IMPLICIT NONE
+
+INTEGER, INTENT(IN) :: MX, N
+REAL, DIMENSION(N,2*MX+1), INTENT(inout) :: A
+REAL, DIMENSION(N), INTENT(inout) :: B
+REAL, INTENT(in) :: R0, W
+REAL, DIMENSION(N), INTENT(out) :: X
+
+INTEGER :: i, cc, dd, compteur 
+REAL, DIMENSION(2*MX+N) :: Y, Y0
+REAL :: ECART, C, D, Z, Z0
+
+DO i=1,2*MX+N
+ 	Y(i)=0.
+ 	Y0(i)=0.
+ENDDO
+ECART=1.
+
+compteur = 0
+DO WHILE(ECART>R0 .and. compteur<=10000)
+  compteur = compteur + 1
+  DO i=MX+1,MX+N
+    ! -------> calcul de la somme inférieure appelée C
+    C=0
+    DO cc=1,MX
+      C=C+Y(i-cc)*A(i-MX,MX+1-cc)
+    ENDDO
+    ! -------> calcul de la somme supérieure appelée D
+    D=0
+    DO dd=1,MX
+      D=D+Y0(i+dd)*A(i-MX,MX+1+dd)
+    ENDDO
+    ! -------> calcul de X,k+1
+    Y(i)=(1.-W)*Y0(i)+(W/A(i-MX,MX+1))*(B(i-MX)-C-D)
+  ENDDO
+
+  ! -------> critère d'arrêt
+  Z0=0.
+  Z=0.
+  DO i=MX+1,MX+N
+    Z=Z+Y(i)*Y(i)
+    Z0=Z0+Y0(i)*Y0(i)
+  ENDDO
+ 
+  ECART=ABS((Z)**(0.5)-(Z0)**(0.5))
+  
+  DO i=MX+1,MX+N
+   Y0(i)=Y(i)
+  ENDDO
+
+END DO
+
+if(compteur>=10000)then
+  print*,"Probleme de convergence du solveur SOR"
+  print*,"(arret apres plus de 10000 iter)"
+  stop
+end if
+! -----> écriture dans X
+
+  DO i=MX+1,MX+N
+    X(i-MX)=Y(i)
+  ENDDO
+
+END SUBROUTINE SOR
+!***************************
