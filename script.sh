@@ -12,4 +12,4 @@ make clean
 # Exécuter le nouveau script 
 
 make
-./prog.exe
+time ./prog.exe
