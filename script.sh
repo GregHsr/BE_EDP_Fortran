@@ -9,7 +9,7 @@ rm sol*
 # Exécuter la commande "make clean"
 make clean
 
-# Exécuter le nouveau script 
+# Exécuter le nouveau script
 
 make
 time ./prog.exe

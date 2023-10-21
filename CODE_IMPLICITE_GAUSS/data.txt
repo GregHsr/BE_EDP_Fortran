@@ -9,9 +9,8 @@
  50.           ! Tb       Temperature at the bottom (Celsius)
  2.e-3         ! tf       final time (s)
  500             ! Nout     number of intermediate unsaved time steps 
- 0.2             ! CFL      Courant's number (advection)
- 5           ! R        Fourier's number (diffusion)
+ 1.             ! CFL      Courant's number (advection)
+ 50.           ! R        Fourier's number (diffusion)
  1             ! Type_mesh 0 regular mesh. 1 irregular mesh
  0             ! Type_vel  0 uniform velocity. 1 non uniform velocity
- 1             ! Method   0 Gauss 1 SOR
- 0             ! iteration (for python script)
+ 0             ! Method   0 Gauss 1 SOR
