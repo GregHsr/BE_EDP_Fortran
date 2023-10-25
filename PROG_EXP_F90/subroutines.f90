@@ -10,7 +10,7 @@ subroutine read_data(param)
  
  print*,'reading data...'
 
- open(unit=11,file="data.txt")
+ open(unit=11,file="../CODE_IMPLICITE_GAUSS/data.txt")
  
  read (11,*) param%nx            ! nb of cells in x-direction
  read (11,*) param%ny            ! nb of cells in y-direction

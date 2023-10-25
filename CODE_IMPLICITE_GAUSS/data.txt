@@ -1,4 +1,4 @@
- 30           ! nx       number of cells in x-direction
+ 10           ! nx       number of cells in x-direction
  10            ! ny       number of cells in y-direction
  3.e-3         ! Lx       length of the domain (m)
  250.e-6       ! Ly       height of the domain (m)
