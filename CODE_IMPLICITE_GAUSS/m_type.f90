@@ -20,6 +20,8 @@ type donnees
  integer :: Type_mesh  ! Type of mesh (0: uniform, 1: non-uniform) 
  integer :: Type_vel   ! Type of velocity (0: uniform, 1: non-uniform)
  integer :: method     ! Method of resolution (0: Gauss, 1: SOR)
+ real :: R0            ! Stop criterion for the SOR method
+ real :: W             ! Relaxation parameter for the SOR method
 
 end type donnees
 

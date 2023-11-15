@@ -77,7 +77,7 @@ program main
    else
     old_B_base = B_base 
     call create_A_band(param%nx,param%nx*param%ny,A_base,Mat_bande)
-    call SOR(param%nx,ordre_A,Mat_bande,old_B_base,0.1,0.5,B_base)
+    call SOR(param%nx,ordre_A,Mat_bande,old_B_base,param%R0,param%W,B_base)
    end if 
 
    !Mise à jour du champ de température
