@@ -6,13 +6,13 @@ Ce projet est composé de deux répertoires distincts ainsi que de script *shell
 
 | CODE_IMPLICITE_GAUSS | PROG_EXP_F90         | Autre               |
 | -------------------- | ---------------------| --------------------|
-| calc_matriciel.f90   | calc_matriciel.f90   | .gitignore          |
+| calc_matriciel.f90   | VTSWriter.f90        | .gitignore          |
 | data.txt             | data.txt             | clean.sh            |
 | m_type.f90           | m_type.f90           | Readme.md           |
 | main.f90             | main.f90             | script.sh           |
 | Makefile             | Makefile             | analyse.py          |
 | subroutines.f90      | subroutines.f90      | script_BE.py        |
-| VTSWriter            | VTSWriter            | script_explicite.sh |
+| VTSWriter.f90        |                      | script_explicite.sh |
 
 
 ## Comment faire tourner le code

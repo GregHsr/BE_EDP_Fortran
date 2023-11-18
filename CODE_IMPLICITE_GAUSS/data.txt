@@ -2,17 +2,17 @@
  10            ! ny       number of cells in y-direction
  3.e-3         ! Lx       length of the domain (m)
  250.e-6       ! Ly       height of the domain (m)
- 1.e-2         ! U0       characteristic parameter for the velocity (s^-1)
+ 5.e-2         ! U0       characteristic parameter for the velocity (s^-1)
  2.e-5         ! D        thermal diffusivity (m^2/s)
  20.           ! Ti       Initial temperature in the domain (Celsius)
  50.           ! Tg       Temperature at the left (Celsius)
  50.           ! Tb       Temperature at the bottom (Celsius)
  2.e-3         ! tf       final time (s)
- 50             ! Nout     number of intermediate unsaved time steps 
+ 500             ! Nout     number of intermediate unsaved time steps 
  1.             ! CFL      Courant's number (advection)
- 50.           ! R        Fourier's number (diffusion)
+ 50           ! R        Fourier's number (diffusion)
  1             ! Type_mesh 0 regular mesh. 1 irregular mesh
  1             ! Type_vel  0 uniform velocity. 1 non uniform velocity
-1             ! Method   0 Gauss 1 SOR
+0             ! Method   0 Gauss 1 SOR
 0.5               ! R0      Stop parameter
-0.1               ! W      Relaxation parameter
+1.25               ! W      Relaxation parameter
