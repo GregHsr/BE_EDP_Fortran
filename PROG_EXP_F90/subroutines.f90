@@ -11,8 +11,9 @@ subroutine read_data(param)
  
  print*,'reading data...'
 
- open(unit=11,file=fileplace//"data.txt")
- 
+ open(unit=11,file=fileplace//"data.txt") ! Si erreur, commenter cette ligne et décommenter la suivante
+ ! open(unit=11,file="data.txt")          ! En plus, copier-coller data.txt dans le répertoire PROG_EXP_F90
+
  read (11,*) param%nx            ! nb of cells in x-direction
  read (11,*) param%ny            ! nb of cells in y-direction
  read (11,*) param%Lx            ! length of the domain

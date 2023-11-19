@@ -8,14 +8,21 @@ Ce projet est composé de deux répertoires distincts ainsi que de script simpli
 
 | CODE_IMPLICITE_GAUSS | PROG_EXP_F90         | Autre               |
 | -------------------- | ---------------------| --------------------|
-| calc_matriciel.f90   | VTSWriter.f90        | .gitignore          |
-| data.txt             | data.txt             | clean.sh            |
+| calc_matriciel.f90   | main.f90             | .gitignore          |
+| data.txt             | subroutines.f90      | clean.sh            |
 | m_type.f90           | m_type.f90           | Readme.md           |
-| main.f90             | main.f90             | script_explicite.sh |
+| main.f90             | VTSWriter.f90        | script_explicite.sh |
 | Makefile             | Makefile             | analyse.py          |
-| subroutines.f90      | subroutines.f90      | script_BE.py        |
+| subroutines.f90      |                      | script_BE.py        |
 | VTSWriter.f90        |                      | lecture_vts.py      |
 |                      |                      | script_SOR.py       |
+
+## Débug Code Explicite
+
+Attention, le code explicite utilise le ```data.txt``` du code implicite. Il est possible que cela engendre une erreur. Pour réparer cela, commenter la ligne 14 dans ```PROG_EXP_F90/subroutines.f90``` et décommenter la 15.
+De plus, copier le ```data.txt``` de ```CODE_IMPLICITE_GAUSS``` dans ```PROG_EXP_F90```.
+
+Dans ce cas, il se peut que les scripts Python ne soit plus fonctionnels. 
 
 ## Comment faire tourner le code
 
