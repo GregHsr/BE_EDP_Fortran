@@ -8,7 +8,7 @@
  50.            ! Tg:       Temperature at the left (Celsius)
  50.            ! Tb:       Temperature at the bottom (Celsius)
  2.e-3          ! tf:       final time (s)
- 500            ! Nout:     number of intermediate unsaved time steps 
+ 1              ! Nout:     number of intermediate unsaved time steps 
  1.             ! CFL:      Courant's number (advection)
  0.5            ! R:        Fourier's number (diffusion)
  1              ! Type_mesh 0: regular mesh, 1: irregular mesh
