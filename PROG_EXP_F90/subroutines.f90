@@ -7,10 +7,11 @@ subroutine read_data(param)
  implicit none 
 
  type (donnees), intent(out) :: param
+ character(*), parameter :: fileplace="../CODE_IMPLICITE_GAUSS/"
  
  print*,'reading data...'
 
- open(unit=11,file="../CODE_IMPLICITE_GAUSS/data.txt")
+ open(unit=11,file=fileplace//"data.txt")
  
  read (11,*) param%nx            ! nb of cells in x-direction
  read (11,*) param%ny            ! nb of cells in y-direction
